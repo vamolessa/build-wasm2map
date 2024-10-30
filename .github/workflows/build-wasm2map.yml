@@ -35,7 +35,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: 'https://github.com/mtolmacs/wasm2map'
+          repository: 'mtolmacs/wasm2map'
 
       - uses: actions-rs/toolchain@v1
         with:
