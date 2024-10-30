@@ -75,7 +75,7 @@ jobs:
           merge-multiple: true
 
       - name: list dir (looking for downloaded artifacts)
-        run: ls --R
+        run: ls -R
 
       - name: Upload Artifacts to GitHub Release
         run: gh release upload '${{ needs.info.outputs.BUILD_DATE }}' wasm2map-*-*-${{ needs.info.outputs.BUILD_DATE }}* -R "${GITHUB_REPOSITORY}"
