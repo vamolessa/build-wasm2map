@@ -45,11 +45,15 @@ jobs:
         id: build
         run: cargo build --release
 
+      - name: Move Artifact
+        shell: sh
+        run: cp target/release/cargo-wasm2map.exe wasm2map-win-${{ matrix.arch }}-${{ needs.info.outputs.BUILD_DATE }}.exe
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: wasm2map-win-${{ matrix.arch }}-${{ needs.info.outputs.BUILD_DATE }}
-          path: target/release/cargo-wasm2map.exe
+          path: wasm2map-win-${{ matrix.arch }}-${{ needs.info.outputs.BUILD_DATE }}.exe
           if-no-files-found: error
           compression-level: 0
           overwrite: true
