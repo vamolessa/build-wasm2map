@@ -1,0 +1,77 @@
+name: build-wasm2map
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"
+  push:
+    branches:
+      - main-no
+
+jobs:
+  info:
+    runs-on: ubuntu-24.04
+    outputs:
+      COMMIT: ${{ steps.info.outputs.COMMIT }}
+      BUILD_DATE: ${{ steps.info.outputs.BUILD_DATE }}
+    steps:
+      - name: Get Latest Commit Id
+        id: info
+        run: |
+          echo COMMIT=`git ls-remote https://github.com/mtolmacs/wasm2map HEAD | awk '{ print $1 }'` >> ${GITHUB_OUTPUT}
+          echo BUILD_DATE=`date +'%Y-%m-%d'` >> ${GITHUB_OUTPUT}
+      
+  build-windows:
+    runs-on: windows-2022
+    needs: info
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    env:
+      COMMIT: ${{ needs.info.outputs.COMMIT }}
+      BUILD_DATE: ${{ needs.info.outputs.BUILD_DATE }}
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: 'https://github.com/mtolmacs/wasm2map'
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Run Cargo Build
+        id: build
+        run: cargo build --release
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm2map-win-${{ matrix.arch }}-${{ needs.info.outputs.BUILD_DATE }}
+          path: target/release/cargo-wasm2map.exe
+          if-no-files-found: error
+          compression-level: 0
+
+  release:
+    runs-on: ubuntu-24.04
+    needs: [info, build-windows]
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+
+      - name: Create GitHub Release
+        run: |
+          echo 'commit: ${{ needs.info.outputs.COMMIT }}' >>notes.txt
+          gh release create ${{ needs.info.outputs.BUILD_DATE }} -R "${GITHUB_REPOSITORY}" -t '${{ needs.info.outputs.BUILD_DATE }}' -F notes.txt
+
+      - name: Get Artifacts From Build Steps
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wasm2map-*-${{ needs.info.outputs.BUILD_DATE }}
+          merge-multiple: true
+
+      - name: Upload Artifacts to GitHub Release
+        run: gh release upload '${{ needs.info.outputs.BUILD_DATE }}' wasm2map-*-${{ needs.info.outputs.BUILD_DATE }}.zip -R "${GITHUB_REPOSITORY}"
