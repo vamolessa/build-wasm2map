@@ -52,6 +52,7 @@ jobs:
           path: target/release/cargo-wasm2map.exe
           if-no-files-found: error
           compression-level: 0
+          overwrite: true
 
   release:
     runs-on: ubuntu-24.04
@@ -70,8 +71,11 @@ jobs:
       - name: Get Artifacts From Build Steps
         uses: actions/download-artifact@v4
         with:
-          pattern: wasm2map-*-*-${{ needs.info.outputs.BUILD_DATE }}*
+          path: .
           merge-multiple: true
+
+      - name: list dir (looking for downloaded artifacts)
+      - run: ls -A
 
       - name: Upload Artifacts to GitHub Release
         run: gh release upload '${{ needs.info.outputs.BUILD_DATE }}' wasm2map-*-*-${{ needs.info.outputs.BUILD_DATE }}* -R "${GITHUB_REPOSITORY}"
